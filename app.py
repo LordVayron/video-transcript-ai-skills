@@ -1,5 +1,6 @@
 import re
 import os
+import tempfile
 from flask import Flask, render_template, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
@@ -7,6 +8,17 @@ from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisable
 app = Flask(__name__)
 
 APP_PASSWORD = os.environ.get('APP_PASSWORD', '@Francisco6')
+YOUTUBE_COOKIES = os.environ.get('YOUTUBE_COOKIES', '')
+
+
+def get_api():
+    if YOUTUBE_COOKIES:
+        tmp = tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False)
+        tmp.write(YOUTUBE_COOKIES)
+        tmp.flush()
+        tmp.close()
+        return YouTubeTranscriptApi(cookies=tmp.name)
+    return YouTubeTranscriptApi()
 
 VIDEO_ID_PATTERN = re.compile(
     r'(?:youtube\.com/(?:watch\?v=|embed/|v/)|youtu\.be/)([A-Za-z0-9_-]{11})'
@@ -38,7 +50,7 @@ def transcript():
     if not video_id:
         return jsonify({'error': 'Could not extract a valid YouTube video ID from the URL.'}), 400
 
-    api = YouTubeTranscriptApi()
+    api = get_api()
     try:
         try:
             segments = api.fetch(video_id, languages=['en'])
