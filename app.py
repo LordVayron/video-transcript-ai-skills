@@ -1,9 +1,12 @@
 import re
+import os
 from flask import Flask, render_template, request, jsonify
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
 
 app = Flask(__name__)
+
+APP_PASSWORD = os.environ.get('APP_PASSWORD', '@Francisco6')
 
 VIDEO_ID_PATTERN = re.compile(
     r'(?:youtube\.com/(?:watch\?v=|embed/|v/)|youtu\.be/)([A-Za-z0-9_-]{11})'
@@ -22,6 +25,9 @@ def index():
 
 @app.route('/transcript', methods=['POST'])
 def transcript():
+    if request.headers.get('X-App-Password') != APP_PASSWORD:
+        return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.get_json(silent=True) or {}
     url = data.get('url', '').strip()
 

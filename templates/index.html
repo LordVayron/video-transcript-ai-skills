@@ -202,6 +202,90 @@
     #transcriptBox::-webkit-scrollbar-track { background: transparent; }
     #transcriptBox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+    /* Password gate */
+    #gate {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.4s ease;
+    }
+
+    #gate.hidden { opacity: 0; pointer-events: none; }
+
+    #gate h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #gate p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    #gate .gate-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #passwordInput {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 20px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+    }
+
+    #passwordInput:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+    }
+
+    #unlockBtn {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      width: 100%;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    #unlockBtn:hover { background: var(--accent-h); }
+    #unlockBtn:active { transform: scale(0.97); }
+
+    #gateError {
+      color: var(--error);
+      font-size: 0.82rem;
+      text-align: center;
+      display: none;
+    }
+
+    #gateError.visible { display: block; }
+
     /* Thumbnail */
     #thumbnailWrap {
       display: none;
@@ -220,6 +304,17 @@
   </style>
 </head>
 <body>
+
+  <!-- Password Gate -->
+  <div id="gate">
+    <h2>YouTube Transcript</h2>
+    <p>Enter your password to continue.</p>
+    <div class="gate-box">
+      <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password" />
+      <div id="gateError">Incorrect password. Try again.</div>
+      <button id="unlockBtn">Unlock</button>
+    </div>
+  </div>
 
   <header>
     <h1>YouTube Transcript</h1>
@@ -252,6 +347,43 @@
   </div>
 
   <script>
+    // --- Password gate ---
+    const gate          = document.getElementById('gate');
+    const passwordInput = document.getElementById('passwordInput');
+    const unlockBtn     = document.getElementById('unlockBtn');
+    const gateError     = document.getElementById('gateError');
+
+    let sessionPassword = sessionStorage.getItem('appPassword') || '';
+
+    function unlock() {
+      if (sessionPassword) { gate.classList.add('hidden'); return; }
+      const entered = passwordInput.value;
+      if (!entered) return;
+      // Verify against backend
+      fetch('/transcript', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-App-Password': entered },
+        body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+      }).then(r => {
+        if (r.status === 401) {
+          gateError.classList.add('visible');
+          passwordInput.value = '';
+        } else {
+          sessionStorage.setItem('appPassword', entered);
+          sessionPassword = entered;
+          gate.classList.add('hidden');
+          gateError.classList.remove('visible');
+        }
+      });
+    }
+
+    unlockBtn.addEventListener('click', unlock);
+    passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+
+    // Show gate or skip if already authenticated
+    if (sessionPassword) gate.classList.add('hidden');
+
+    // --- Main app ---
     const urlInput   = document.getElementById('urlInput');
     const submitBtn  = document.getElementById('submitBtn');
     const spinner    = document.getElementById('spinner');
@@ -287,7 +419,7 @@
       try {
         const res = await fetch('/transcript', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'X-App-Password': sessionPassword },
           body: JSON.stringify({ url })
         });
         const data = await res.json();
