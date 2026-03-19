@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Transcript</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #171717;
+      --surface2:  #202020;
+      --border:    #2a2a2a;
+      --text:      #e8e8e8;
+      --muted:     #888;
+      --accent:    #4f8ef7;
+      --accent-h:  #6ba3ff;
+      --error:     #f75f5f;
+      --radius:    10px;
+      --transition: 0.2s ease;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 12px 20px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 12px 24px;
+      transition: background var(--transition), opacity var(--transition), transform var(--transition);
+    }
+
+    #submitBtn {
+      background: var(--accent);
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    #submitBtn:hover:not(:disabled) { background: var(--accent-h); }
+
+    #submitBtn:active:not(:disabled) { transform: scale(0.97); }
+
+    #submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Spinner */
+    .spinner-wrap {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .spinner-wrap.visible { display: flex; }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box {
+      display: none;
+      margin-top: 18px;
+      padding: 12px 16px;
+      background: rgba(247,95,95,0.1);
+      border: 1px solid rgba(247,95,95,0.3);
+      border-radius: var(--radius);
+      color: var(--error);
+      font-size: 0.88rem;
+    }
+
+    .error-box.visible { display: block; }
+
+    /* Result */
+    .result-wrap {
+      display: none;
+      margin-top: 24px;
+    }
+
+    .result-wrap.visible { display: block; }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .result-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    #downloadBtn {
+      background: #22c55e;
+      border: none;
+      color: #fff;
+      padding: 7px 16px;
+      font-size: 0.82rem;
+    }
+
+    #downloadBtn:hover { background: #16a34a; }
+    #downloadBtn:active { transform: scale(0.97); }
+
+    #transcriptBox {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: #ccc;
+      max-height: 420px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    #transcriptBox::-webkit-scrollbar { width: 6px; }
+    #transcriptBox::-webkit-scrollbar-track { background: transparent; }
+    #transcriptBox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Thumbnail */
+    #thumbnailWrap {
+      display: none;
+      margin-bottom: 16px;
+    }
+
+    #thumbnailWrap.visible { display: block; }
+
+    #thumbnail {
+      width: 100%;
+      border-radius: var(--radius);
+      object-fit: cover;
+      aspect-ratio: 16/9;
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>YouTube Transcript</h1>
+    <p>Paste a YouTube URL to extract its full transcript.</p>
+  </header>
+
+  <div class="card">
+    <div class="input-row">
+      <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+      <button id="submitBtn">Extract</button>
+    </div>
+
+    <div class="spinner-wrap" id="spinner">
+      <div class="spinner"></div>
+      <span>Fetching transcript…</span>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="result-wrap" id="resultWrap">
+      <div id="thumbnailWrap">
+        <img id="thumbnail" src="" alt="Video thumbnail" />
+      </div>
+      <div class="result-header">
+        <span class="result-label">Transcript</span>
+        <button id="downloadBtn">Download .txt</button>
+      </div>
+      <div id="transcriptBox"></div>
+    </div>
+  </div>
+
+  <script>
+    const urlInput   = document.getElementById('urlInput');
+    const submitBtn  = document.getElementById('submitBtn');
+    const spinner    = document.getElementById('spinner');
+    const errorBox   = document.getElementById('errorBox');
+    const resultWrap = document.getElementById('resultWrap');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const thumbnailWrap = document.getElementById('thumbnailWrap');
+    const thumbnail = document.getElementById('thumbnail');
+
+    let currentVideoId = '';
+    let currentTranscript = '';
+
+    function reset() {
+      errorBox.classList.remove('visible');
+      resultWrap.classList.remove('visible');
+      spinner.classList.remove('visible');
+      transcriptBox.textContent = '';
+      thumbnailWrap.classList.remove('visible');
+      thumbnail.src = '';
+      currentVideoId = '';
+      currentTranscript = '';
+    }
+
+    async function fetchTranscript() {
+      const url = urlInput.value.trim();
+      if (!url) return;
+
+      reset();
+      submitBtn.disabled = true;
+      spinner.classList.add('visible');
+
+      try {
+        const res = await fetch('/transcript', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          errorBox.textContent = data.error;
+          errorBox.classList.add('visible');
+        } else {
+          currentVideoId = data.video_id;
+          currentTranscript = data.transcript;
+          transcriptBox.textContent = currentTranscript;
+          thumbnail.src = `https://img.youtube.com/vi/${currentVideoId}/hqdefault.jpg`;
+          thumbnailWrap.classList.add('visible');
+          resultWrap.classList.add('visible');
+        }
+      } catch (err) {
+        errorBox.textContent = 'Network error — could not reach the server.';
+        errorBox.classList.add('visible');
+      } finally {
+        spinner.classList.remove('visible');
+        submitBtn.disabled = false;
+      }
+    }
+
+    submitBtn.addEventListener('click', fetchTranscript);
+
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') fetchTranscript();
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!currentTranscript) return;
+      const blob = new Blob([currentTranscript], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (currentVideoId || 'transcript') + '.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  </script>
+
+</body>
+</html>
