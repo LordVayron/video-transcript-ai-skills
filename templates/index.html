@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YouTube Transcript</title>
+  <title>Video Transcript</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -19,6 +19,11 @@
       --error:     #f75f5f;
       --radius:    10px;
       --transition: 0.2s ease;
+      --yt:   #ff0000;
+      --tt:   #69c9d0;
+      --ig:   #e1306c;
+      --ai:   #a78bfa;
+      --ai-h: #c4b5fd;
     }
 
     body {
@@ -32,27 +37,71 @@
       padding: 48px 16px 80px;
     }
 
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-    }
+    header { text-align: center; margin-bottom: 28px; }
 
     header h1 {
       font-size: 2rem;
       font-weight: 700;
       letter-spacing: -0.5px;
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      background: linear-gradient(135deg, var(--accent), var(--ai));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    header p {
-      margin-top: 8px;
-      color: var(--muted);
-      font-size: 0.9rem;
+    header p { margin-top: 8px; color: var(--muted); font-size: 0.9rem; }
+
+    /* ── Mode tabs ─────────────────────────────────────────── */
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 20px;
     }
 
+    .mode-tab {
+      padding: 10px 24px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .mode-tab:hover { color: var(--text); border-color: #444; }
+
+    .mode-tab.active {
+      background: rgba(167,139,250,0.1);
+      border-color: var(--ai);
+      color: var(--ai);
+    }
+
+    .vault-btn {
+      margin-left: auto;
+      padding: 10px 20px;
+      background: linear-gradient(135deg, var(--accent), var(--ai));
+      border: none;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+
+    .vault-btn:hover { opacity: 0.88; }
+    .vault-btn:active { transform: scale(0.97); }
+
+    /* ── Mode sections ─────────────────────────────────────── */
+    .mode-section { display: none; width: 100%; flex-direction: column; align-items: center; }
+    .mode-section.active { display: flex; }
+
+    /* ── Card ──────────────────────────────────────────────── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -63,10 +112,37 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
-    .input-row {
+    /* ── Platform tabs ─────────────────────────────────────── */
+    .platform-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+
+    .tab-btn {
+      flex: 1;
       display: flex;
-      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
     }
+
+    .tab-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .tab-btn:hover { color: var(--text); border-color: #444; }
+
+    .tab-btn.active[data-p="youtube"]   { border-color: var(--yt); color: var(--yt); background: rgba(255,0,0,0.08); }
+    .tab-btn.active[data-p="tiktok"]    { border-color: var(--tt); color: var(--tt); background: rgba(105,201,208,0.08); }
+    .tab-btn.active[data-p="instagram"] { border-color: var(--ig); color: var(--ig); background: rgba(225,48,108,0.08); }
+
+    .platform-panel { display: none; }
+    .platform-panel.active { display: block; }
+
+    .input-row { display: flex; gap: 10px; }
 
     input[type="text"] {
       flex: 1;
@@ -82,10 +158,9 @@
 
     input[type="text"]::placeholder { color: var(--muted); }
 
-    input[type="text"]:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
-    }
+    .panel-youtube   input[type="text"]:focus { border-color: var(--yt); box-shadow: 0 0 0 3px rgba(255,0,0,0.12); }
+    .panel-tiktok    input[type="text"]:focus { border-color: var(--tt); box-shadow: 0 0 0 3px rgba(105,201,208,0.12); }
+    .panel-instagram input[type="text"]:focus { border-color: var(--ig); box-shadow: 0 0 0 3px rgba(225,48,108,0.12); }
 
     button {
       cursor: pointer;
@@ -97,19 +172,18 @@
       transition: background var(--transition), opacity var(--transition), transform var(--transition);
     }
 
-    #submitBtn {
-      background: var(--accent);
-      color: #fff;
-      white-space: nowrap;
-    }
+    .extract-btn { color: #fff; white-space: nowrap; }
+    .extract-btn:active:not(:disabled) { transform: scale(0.97); }
+    .extract-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #submitBtn:hover:not(:disabled) { background: var(--accent-h); }
+    .panel-youtube   .extract-btn { background: var(--yt); }
+    .panel-youtube   .extract-btn:hover:not(:disabled) { background: #cc0000; }
+    .panel-tiktok    .extract-btn { background: var(--tt); color: #000; }
+    .panel-tiktok    .extract-btn:hover:not(:disabled) { background: #4db8bf; }
+    .panel-instagram .extract-btn { background: var(--ig); }
+    .panel-instagram .extract-btn:hover:not(:disabled) { background: #c0275e; }
 
-    #submitBtn:active:not(:disabled) { transform: scale(0.97); }
-
-    #submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* Spinner */
+    /* ── Spinner ───────────────────────────────────────────── */
     .spinner-wrap {
       display: none;
       justify-content: center;
@@ -119,21 +193,18 @@
       color: var(--muted);
       font-size: 0.85rem;
     }
-
     .spinner-wrap.visible { display: flex; }
 
     .spinner {
-      width: 20px;
-      height: 20px;
+      width: 20px; height: 20px;
       border: 2px solid var(--border);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Error */
+    /* ── Error ─────────────────────────────────────────────── */
     .error-box {
       display: none;
       margin-top: 18px;
@@ -144,15 +215,10 @@
       color: var(--error);
       font-size: 0.88rem;
     }
-
     .error-box.visible { display: block; }
 
-    /* Result */
-    .result-wrap {
-      display: none;
-      margin-top: 24px;
-    }
-
+    /* ── Result ────────────────────────────────────────────── */
+    .result-wrap { display: none; margin-top: 24px; }
     .result-wrap.visible { display: block; }
 
     .result-header {
@@ -177,11 +243,10 @@
       padding: 7px 16px;
       font-size: 0.82rem;
     }
-
     #downloadBtn:hover { background: #16a34a; }
     #downloadBtn:active { transform: scale(0.97); }
 
-    #transcriptBox {
+    .transcript-box {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -197,117 +262,323 @@
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
+    .transcript-box::-webkit-scrollbar { width: 6px; }
+    .transcript-box::-webkit-scrollbar-track { background: transparent; }
+    .transcript-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-    #transcriptBox::-webkit-scrollbar { width: 6px; }
-    #transcriptBox::-webkit-scrollbar-track { background: transparent; }
-    #transcriptBox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    /* ── Thumbnail ─────────────────────────────────────────── */
+    .thumb-wrap { display: none; margin-bottom: 16px; }
+    .thumb-wrap.visible { display: block; }
+    .thumb-img {
+      width: 100%; border-radius: var(--radius);
+      object-fit: cover; aspect-ratio: 16/9;
+      border: 1px solid var(--border);
+    }
 
-    /* Password gate */
+    /* ── Turn into AI Skill button ─────────────────────────── */
+    .turn-into-skill-btn {
+      background: linear-gradient(135deg, var(--accent), var(--ai));
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 13px 32px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition), box-shadow var(--transition);
+      box-shadow: 0 4px 20px rgba(79,142,247,0.3);
+      margin-top: 16px;
+      display: block;
+      width: 100%;
+    }
+    .turn-into-skill-btn:hover { opacity: 0.9; box-shadow: 0 6px 28px rgba(79,142,247,0.45); }
+    .turn-into-skill-btn:active { transform: scale(0.97); }
+
+    /* ── Password gate ─────────────────────────────────────── */
     #gate {
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: var(--bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
       z-index: 100;
       transition: opacity 0.4s ease;
     }
-
     #gate.hidden { opacity: 0; pointer-events: none; }
 
     #gate h2 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      background: linear-gradient(135deg, var(--accent), #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: 1.4rem; font-weight: 700; margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--accent), var(--ai));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-
-    #gate p {
-      color: var(--muted);
-      font-size: 0.85rem;
-      margin-bottom: 24px;
-    }
+    #gate p { color: var(--muted); font-size: 0.85rem; margin-bottom: 24px; }
 
     #gate .gate-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      width: 100%;
-      max-width: 360px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 32px;
+      width: 100%; max-width: 360px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+      display: flex; flex-direction: column; gap: 12px;
     }
 
     #passwordInput {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 12px 20px;
-      color: var(--text);
-      font-size: 0.95rem;
-      outline: none;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 999px; padding: 12px 20px;
+      color: var(--text); font-size: 0.95rem; outline: none;
       transition: border-color var(--transition), box-shadow var(--transition);
       width: 100%;
     }
-
-    #passwordInput:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
-    }
+    #passwordInput:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.15); }
 
     #unlockBtn {
-      background: var(--accent);
-      color: #fff;
-      border-radius: 999px;
-      padding: 12px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      width: 100%;
-      transition: background var(--transition), transform var(--transition);
+      background: var(--accent); color: #fff;
+      border-radius: 999px; padding: 12px;
+      font-size: 0.9rem; font-weight: 600; width: 100%;
     }
-
     #unlockBtn:hover { background: var(--accent-h); }
     #unlockBtn:active { transform: scale(0.97); }
 
-    #gateError {
-      color: var(--error);
-      font-size: 0.82rem;
-      text-align: center;
-      display: none;
-    }
-
+    #gateError { color: var(--error); font-size: 0.82rem; text-align: center; display: none; }
     #gateError.visible { display: block; }
 
-    /* Thumbnail */
-    #thumbnailWrap {
-      display: none;
+    /* ── Usage widget ──────────────────────────────────────── */
+    .usage-widget {
+      width: 100%; max-width: 720px; margin-top: 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .usage-left { display: flex; flex-direction: column; gap: 2px; }
+    .usage-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+    .usage-month { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+    .usage-stats { display: flex; gap: 24px; }
+    .usage-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .usage-stat-value { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+    .usage-stat-value.cost { color: #22c55e; }
+    .usage-stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .usage-divider { width: 1px; height: 36px; background: var(--border); }
+
+    /* ── Skills Vault ──────────────────────────────────────── */
+    #section-vault {
+      width: 100%; max-width: 720px;
+      display: none; flex-direction: column; align-items: stretch;
+    }
+    #section-vault.visible { display: flex; }
+
+    .vault-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    .vault-title {
+      font-size: 1.3rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--ai));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .vault-count { font-size: 0.8rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+
+    .vault-empty { text-align: center; color: var(--muted); font-size: 0.88rem; padding: 40px 20px; }
+
+    /* ── Skill Card ────────────────────────────────────────── */
+    .skill-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+    .skill-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(79,142,247,0.18), 0 0 0 1px rgba(167,139,250,0.25);
+      border-color: rgba(167,139,250,0.4);
+    }
+    .skill-card-thumb-link { display: block; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--surface2); }
+    .skill-card-thumb { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; display: block; }
+    .skill-card:hover .skill-card-thumb { transform: scale(1.04); }
+    .skill-card-thumb-placeholder { width: 100%; height: 100%; background: var(--surface2); }
+
+    .skill-card-body { padding: 14px 14px 8px; flex: 1; }
+    .skill-card-name { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .skill-card-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    .skill-card-footer { padding: 10px 14px 14px; display: flex; gap: 8px; align-items: center; }
+    .skill-dl-btn {
+      flex: 1; background: linear-gradient(135deg, var(--accent), var(--ai));
+      color: #fff; border: none; border-radius: 999px; padding: 8px 14px;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .skill-dl-btn:hover { opacity: 0.88; }
+    .skill-dl-btn:active { transform: scale(0.97); }
+
+    .skill-del-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 50%; width: 30px; height: 30px; padding: 0; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      transition: border-color var(--transition), color var(--transition), background var(--transition);
+    }
+    .skill-del-btn:hover { border-color: var(--error); color: var(--error); background: rgba(247,95,95,0.08); }
+
+    /* ── Category badge ────────────────────────────────────── */
+    .skill-category-badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: rgba(167,139,250,0.12);
+      color: var(--ai);
+      border: 1px solid rgba(167,139,250,0.25);
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    /* ── Category filter bar ───────────────────────────────── */
+    .category-filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .cat-pill {
+      padding: 6px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .cat-pill:hover { color: var(--text); border-color: #444; }
+    .cat-pill.active {
+      background: rgba(167,139,250,0.12);
+      border-color: var(--ai);
+      color: var(--ai);
+    }
+
+    /* ── Modal ─────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 32px;
+      width: 100%; max-width: 480px; max-height: 90vh;
+      overflow-y: auto; position: relative;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+      transform: translateY(12px); transition: transform 0.25s ease;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .modal-overlay.open .modal-box { transform: translateY(0); }
+
+    .modal-state.hidden { display: none; }
+
+    .modal-spinner-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 16px; padding: 32px 0; color: var(--muted); font-size: 0.9rem;
+    }
+
+    .modal-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+
+    .modal-label {
+      display: block; font-size: 0.8rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--muted); margin-bottom: 8px;
+    }
+
+    .modal-textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 16px; color: var(--text);
+      font-size: 0.9rem; line-height: 1.5; resize: vertical; outline: none;
+      font-family: inherit;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .modal-textarea:focus { border-color: var(--ai); box-shadow: 0 0 0 3px rgba(167,139,250,0.15); }
+
+    .suggestion-chips { display: flex; flex-direction: column; gap: 8px; margin: 14px 0 20px; }
+
+    .chip {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      color: var(--text); font-size: 0.85rem; text-align: left; cursor: pointer;
+      transition: border-color var(--transition), background var(--transition), color var(--transition);
+      line-height: 1.4;
+    }
+    .chip:hover { border-color: var(--ai); background: rgba(167,139,250,0.08); color: var(--ai); }
+    .chip.selected { border-color: var(--ai); background: rgba(167,139,250,0.12); color: var(--ai); }
+
+    .generate-skill-btn {
+      width: 100%; background: linear-gradient(135deg, var(--accent), var(--ai));
+      color: #fff; border: none; border-radius: 999px; padding: 13px;
+      font-size: 0.95rem; font-weight: 700; cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .generate-skill-btn:hover:not(:disabled) { opacity: 0.88; }
+    .generate-skill-btn:active:not(:disabled) { transform: scale(0.97); }
+    .generate-skill-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .modal-result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 12px; }
+    .modal-skill-name { font-size: 1rem; font-weight: 700; color: var(--text); }
+
+    .modal-dl-btn {
+      background: #22c55e; color: #fff; border: none; border-radius: 999px;
+      padding: 8px 18px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      transition: background var(--transition), transform var(--transition);
+    }
+    .modal-dl-btn:hover { background: #16a34a; }
+    .modal-dl-btn:active { transform: scale(0.97); }
+
+    .modal-result-desc { font-size: 0.83rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+    .modal-skill-preview {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 18px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.78rem; line-height: 1.7; color: #ccc;
+      max-height: 280px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-word;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
       margin-bottom: 16px;
     }
 
-    #thumbnailWrap.visible { display: block; }
-
-    #thumbnail {
-      width: 100%;
-      border-radius: var(--radius);
-      object-fit: cover;
-      aspect-ratio: 16/9;
-      border: 1px solid var(--border);
+    .modal-vault-btn {
+      width: 100%; background: transparent; border: 1px solid var(--border);
+      color: var(--muted); border-radius: 999px; padding: 10px;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
     }
+    .modal-vault-btn:hover { border-color: var(--ai); color: var(--ai); }
+
+    .modal-close-btn {
+      position: absolute; top: 16px; right: 16px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); border-radius: 50%;
+      width: 32px; height: 32px; padding: 0; font-size: 0.8rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .modal-close-btn:hover { border-color: var(--error); color: var(--error); }
   </style>
 </head>
 <body>
 
   <!-- Password Gate -->
   <div id="gate">
-    <h2>YouTube Transcript</h2>
+    <h2>Video Transcript</h2>
     <p>Enter your password to continue.</p>
     <div class="gate-box">
       <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password" />
@@ -317,49 +588,228 @@
   </div>
 
   <header>
-    <h1>YouTube Transcript</h1>
-    <p>Paste a YouTube URL to extract its full transcript.</p>
+    <h1>Video Transcript</h1>
+    <p>Extract transcripts from YouTube, TikTok, or Instagram Reels.</p>
   </header>
 
-  <div class="card">
-    <div class="input-row">
-      <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
-      <button id="submitBtn">Extract</button>
+  <!-- Mode Navigation -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="transcripts">Transcripts</button>
+    <button class="mode-tab" data-mode="ai-skills">AI Skills</button>
+    <button class="vault-btn" id="vaultToggleBtn">Skills Vault</button>
+  </div>
+
+  <!-- ── TRANSCRIPTS SECTION ──────────────────────────────── -->
+  <div id="section-transcripts" class="mode-section active">
+    <div class="card">
+      <div class="platform-tabs" id="transcripts-tabs">
+        <button class="tab-btn active" data-p="youtube">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+          YouTube
+        </button>
+        <button class="tab-btn" data-p="tiktok">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3a4.5 4.5 0 0 1-4.5-4.5h-3.3v13.8a2.7 2.7 0 1 1-2.7-2.7c.3 0 .5 0 .8.1V6.3a6 6 0 1 0 5.2 5.9V8.5a7.8 7.8 0 0 0 4.5 1.4V6.6A4.5 4.5 0 0 1 19.6 3z"/></svg>
+          TikTok
+        </button>
+        <button class="tab-btn" data-p="instagram">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.2 4.8 1.7 5 5 .1 1.3.1 1.6.1 4.9s0 3.6-.1 4.9c-.2 3.3-1.7 4.8-5 5-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-3.3-.2-4.8-1.7-5-5C2 16.6 2 16.3 2 13s0-3.6.1-4.9c.2-3.3 1.7-4.8 5-5C8.4 2.2 8.7 2.2 12 2.2zm0-2.2C8.7 0 8.4 0 7 .1 2.7.3.3 2.7.1 7 0 8.4 0 8.7 0 12s0 3.6.1 5c.2 4.3 2.6 6.7 7 6.9 1.4.1 1.6.1 5 .1s3.6 0 5-.1c4.3-.2 6.8-2.6 7-7C24 15.6 24 15.3 24 12s0-3.6-.1-5c-.2-4.3-2.6-6.7-7-6.9C15.6 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
+          Instagram
+        </button>
+      </div>
+
+      <div class="platform-panel panel-youtube active" id="panel-youtube">
+        <div class="input-row">
+          <input type="text" id="ytInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+          <button class="extract-btn" id="ytBtn">Extract</button>
+        </div>
+      </div>
+      <div class="platform-panel panel-tiktok" id="panel-tiktok">
+        <div class="input-row">
+          <input type="text" id="ttInput" placeholder="https://www.tiktok.com/@user/video/..." autocomplete="off" />
+          <button class="extract-btn" id="ttBtn">Extract</button>
+        </div>
+      </div>
+      <div class="platform-panel panel-instagram" id="panel-instagram">
+        <div class="input-row">
+          <input type="text" id="igInput" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
+          <button class="extract-btn" id="igBtn">Extract</button>
+        </div>
+      </div>
+
+      <div class="spinner-wrap" id="spinner">
+        <div class="spinner"></div>
+        <span id="spinnerText">Fetching transcript…</span>
+      </div>
+      <div class="error-box" id="errorBox"></div>
+
+      <div class="result-wrap" id="resultWrap">
+        <div class="thumb-wrap" id="thumbnailWrap">
+          <img class="thumb-img" id="thumbnail" src="" alt="Video thumbnail" />
+        </div>
+        <div class="result-header">
+          <span class="result-label">Transcript</span>
+          <button id="downloadBtn">Download .txt</button>
+        </div>
+        <div class="transcript-box" id="transcriptBox"></div>
+      </div>
     </div>
 
-    <div class="spinner-wrap" id="spinner">
-      <div class="spinner"></div>
-      <span>Fetching transcript…</span>
+    <!-- Usage Widget -->
+    <div class="usage-widget" id="usageWidget">
+      <div class="usage-left">
+        <span class="usage-title">Whisper API Usage</span>
+        <span class="usage-month" id="usageMonth">—</span>
+      </div>
+      <div class="usage-stats">
+        <div class="usage-stat">
+          <span class="usage-stat-value" id="usageRequests">0</span>
+          <span class="usage-stat-label">Requests</span>
+        </div>
+        <div class="usage-divider"></div>
+        <div class="usage-stat">
+          <span class="usage-stat-value" id="usageMinutes">0</span>
+          <span class="usage-stat-label">Minutes</span>
+        </div>
+        <div class="usage-divider"></div>
+        <div class="usage-stat">
+          <span class="usage-stat-value cost" id="usageCost">$0.00</span>
+          <span class="usage-stat-label">Spent</span>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="error-box" id="errorBox"></div>
+  <!-- ── AI SKILLS SECTION ────────────────────────────────── -->
+  <div id="section-ai-skills" class="mode-section">
+    <div class="card">
+      <div class="platform-tabs" id="skills-tabs">
+        <button class="tab-btn active" data-p="youtube">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.7 15.5V8.5l6.3 3.5-6.3 3.5z"/></svg>
+          YouTube
+        </button>
+        <button class="tab-btn" data-p="tiktok">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.6 3a4.5 4.5 0 0 1-4.5-4.5h-3.3v13.8a2.7 2.7 0 1 1-2.7-2.7c.3 0 .5 0 .8.1V6.3a6 6 0 1 0 5.2 5.9V8.5a7.8 7.8 0 0 0 4.5 1.4V6.6A4.5 4.5 0 0 1 19.6 3z"/></svg>
+          TikTok
+        </button>
+        <button class="tab-btn" data-p="instagram">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.2 4.8 1.7 5 5 .1 1.3.1 1.6.1 4.9s0 3.6-.1 4.9c-.2 3.3-1.7 4.8-5 5-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-3.3-.2-4.8-1.7-5-5C2 16.6 2 16.3 2 13s0-3.6.1-4.9c.2-3.3 1.7-4.8 5-5C8.4 2.2 8.7 2.2 12 2.2zm0-2.2C8.7 0 8.4 0 7 .1 2.7.3.3 2.7.1 7 0 8.4 0 8.7 0 12s0 3.6.1 5c.2 4.3 2.6 6.7 7 6.9 1.4.1 1.6.1 5 .1s3.6 0 5-.1c4.3-.2 6.8-2.6 7-7C24 15.6 24 15.3 24 12s0-3.6-.1-5c-.2-4.3-2.6-6.7-7-6.9C15.6 0 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4A6.2 6.2 0 0 0 12 5.8zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-11.8a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8z"/></svg>
+          Instagram
+        </button>
+      </div>
 
-    <div class="result-wrap" id="resultWrap">
-      <div id="thumbnailWrap">
-        <img id="thumbnail" src="" alt="Video thumbnail" />
+      <div class="platform-panel panel-youtube active" id="skills-panel-youtube">
+        <div class="input-row">
+          <input type="text" id="skYtInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" />
+          <button class="extract-btn" id="skYtBtn">Extract</button>
+        </div>
       </div>
-      <div class="result-header">
-        <span class="result-label">Transcript</span>
-        <button id="downloadBtn">Download .txt</button>
+      <div class="platform-panel panel-tiktok" id="skills-panel-tiktok">
+        <div class="input-row">
+          <input type="text" id="skTtInput" placeholder="https://www.tiktok.com/@user/video/..." autocomplete="off" />
+          <button class="extract-btn" id="skTtBtn">Extract</button>
+        </div>
       </div>
-      <div id="transcriptBox"></div>
+      <div class="platform-panel panel-instagram" id="skills-panel-instagram">
+        <div class="input-row">
+          <input type="text" id="skIgInput" placeholder="https://www.instagram.com/reel/..." autocomplete="off" />
+          <button class="extract-btn" id="skIgBtn">Extract</button>
+        </div>
+      </div>
+
+      <div class="spinner-wrap" id="skSpinner">
+        <div class="spinner"></div>
+        <span id="skSpinnerText">Fetching transcript…</span>
+      </div>
+      <div class="error-box" id="skErrorBox"></div>
+
+      <div class="result-wrap" id="skResultWrap">
+        <div class="thumb-wrap" id="skThumbWrap">
+          <img class="thumb-img" id="skThumb" src="" alt="Video thumbnail" />
+        </div>
+        <div class="result-header">
+          <span class="result-label">Transcript</span>
+        </div>
+        <div class="transcript-box" id="skTranscriptBox"></div>
+        <button class="turn-into-skill-btn" id="turnIntoSkillBtn">✦ Turn into AI Skill</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SKILLS VAULT SECTION ─────────────────────────────── -->
+  <div id="section-vault">
+    <div class="vault-header">
+      <h2 class="vault-title">Skills Vault</h2>
+      <span class="vault-count" id="vaultCount">0 skills</span>
+    </div>
+    <div class="category-filter-bar" id="categoryFilterBar">
+      <button class="cat-pill active" data-cat="all">All</button>
+    </div>
+    <div class="skills-grid" id="skillsGrid"></div>
+    <div class="vault-empty" id="vaultEmpty" style="display:none;">
+      No skills yet. Go to the AI Skills tab, extract a transcript, and click "Turn into AI Skill".
+    </div>
+  </div>
+
+  <!-- ── SKILL GENERATION MODAL ───────────────────────────── -->
+  <div class="modal-overlay" id="skillModal">
+    <div class="modal-box">
+
+      <!-- State: analyzing -->
+      <div class="modal-state" id="modalAnalyzing">
+        <div class="modal-spinner-wrap">
+          <div class="spinner"></div>
+          <span>Analyzing transcript…</span>
+        </div>
+      </div>
+
+      <!-- State: ready -->
+      <div class="modal-state hidden" id="modalReady">
+        <h3 class="modal-title">Turn into AI Skill</h3>
+        <label class="modal-label">What do you want this skill to do?</label>
+        <textarea id="skillContext" class="modal-textarea" placeholder="Add context or describe your goal (optional)…" rows="3"></textarea>
+        <div class="suggestion-chips" id="suggestionChips">
+          <button class="chip" id="chip0"></button>
+          <button class="chip" id="chip1"></button>
+        </div>
+        <button class="generate-skill-btn" id="generateSkillBtn" disabled>Generate Skill</button>
+      </div>
+
+      <!-- State: generating -->
+      <div class="modal-state hidden" id="modalGenerating">
+        <div class="modal-spinner-wrap">
+          <div class="spinner"></div>
+          <span>Generating your skill…</span>
+        </div>
+      </div>
+
+      <!-- State: result -->
+      <div class="modal-state hidden" id="modalResult">
+        <div class="modal-result-header">
+          <span class="modal-skill-name" id="resultName">Skill Ready</span>
+          <button class="modal-dl-btn" id="modalDlBtn">Download .md</button>
+        </div>
+        <p class="modal-result-desc" id="resultDesc"></p>
+        <span class="skill-category-badge" id="resultCategory" style="margin-bottom:14px;"></span>
+        <div class="modal-skill-preview" id="skillPreview"></div>
+        <button class="modal-vault-btn" id="viewVaultBtn">View in Skills Vault</button>
+      </div>
+
+      <button class="modal-close-btn" id="modalCloseBtn">✕</button>
     </div>
   </div>
 
   <script>
-    // --- Password gate ---
+    // ── Password gate ─────────────────────────────────────────
     const gate          = document.getElementById('gate');
     const passwordInput = document.getElementById('passwordInput');
     const unlockBtn     = document.getElementById('unlockBtn');
     const gateError     = document.getElementById('gateError');
-
     let sessionPassword = sessionStorage.getItem('appPassword') || '';
 
     function unlock() {
-      if (sessionPassword) { gate.classList.add('hidden'); return; }
+      if (sessionPassword) { gate.classList.add('hidden'); refreshUsage(); return; }
       const entered = passwordInput.value;
       if (!entered) return;
-      // Verify against backend
       fetch('/transcript', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-App-Password': entered },
@@ -373,49 +823,84 @@
           sessionPassword = entered;
           gate.classList.add('hidden');
           gateError.classList.remove('visible');
+          refreshUsage();
         }
       });
     }
 
     unlockBtn.addEventListener('click', unlock);
     passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+    if (sessionPassword) { gate.classList.add('hidden'); refreshUsage(); }
 
-    // Show gate or skip if already authenticated
-    if (sessionPassword) gate.classList.add('hidden');
+    // ── Mode switching ────────────────────────────────────────
+    const modeTabs     = document.querySelectorAll('.mode-tab');
+    const vault        = document.getElementById('section-vault');
+    let activeMode     = 'transcripts';
 
-    // --- Main app ---
-    const urlInput   = document.getElementById('urlInput');
-    const submitBtn  = document.getElementById('submitBtn');
-    const spinner    = document.getElementById('spinner');
-    const errorBox   = document.getElementById('errorBox');
-    const resultWrap = document.getElementById('resultWrap');
+    modeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        modeTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeMode = tab.dataset.mode;
+        vault.classList.remove('visible');
+        document.getElementById('section-transcripts').classList.toggle('active', activeMode === 'transcripts');
+        document.getElementById('section-ai-skills').classList.toggle('active', activeMode === 'ai-skills');
+      });
+    });
+
+    document.getElementById('vaultToggleBtn').addEventListener('click', () => {
+      const isVisible = vault.classList.contains('visible');
+      if (isVisible) {
+        vault.classList.remove('visible');
+        document.getElementById('section-' + activeMode).classList.add('active');
+      } else {
+        document.getElementById('section-transcripts').classList.remove('active');
+        document.getElementById('section-ai-skills').classList.remove('active');
+        vault.classList.add('visible');
+        loadVault();
+      }
+    });
+
+    // ── Transcripts tab ───────────────────────────────────────
+    const trTabs = document.querySelectorAll('#transcripts-tabs .tab-btn');
+    trTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        trTabs.forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#section-transcripts .platform-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('panel-' + tab.dataset.p).classList.add('active');
+        trReset();
+      });
+    });
+
+    const spinner      = document.getElementById('spinner');
+    const spinnerText  = document.getElementById('spinnerText');
+    const errorBox     = document.getElementById('errorBox');
+    const resultWrap   = document.getElementById('resultWrap');
     const transcriptBox = document.getElementById('transcriptBox');
-    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadBtn  = document.getElementById('downloadBtn');
     const thumbnailWrap = document.getElementById('thumbnailWrap');
-    const thumbnail = document.getElementById('thumbnail');
+    const thumbnail    = document.getElementById('thumbnail');
+    let currentVideoId = '', currentTranscript = '';
 
-    let currentVideoId = '';
-    let currentTranscript = '';
-
-    function reset() {
+    function trReset() {
       errorBox.classList.remove('visible');
       resultWrap.classList.remove('visible');
       spinner.classList.remove('visible');
       transcriptBox.textContent = '';
       thumbnailWrap.classList.remove('visible');
       thumbnail.src = '';
-      currentVideoId = '';
-      currentTranscript = '';
+      currentVideoId = ''; currentTranscript = '';
     }
 
-    async function fetchTranscript() {
-      const url = urlInput.value.trim();
+    async function fetchTranscript(inputEl, btnEl) {
+      const url = inputEl.value.trim();
       if (!url) return;
-
-      reset();
-      submitBtn.disabled = true;
+      trReset();
+      btnEl.disabled = true;
+      const platform = document.querySelector('#transcripts-tabs .tab-btn.active').dataset.p;
+      spinnerText.textContent = platform === 'youtube' ? 'Fetching transcript…' : 'Fetching captions (may fall back to audio transcription)…';
       spinner.classList.add('visible');
-
       try {
         const res = await fetch('/transcript', {
           method: 'POST',
@@ -423,7 +908,6 @@
           body: JSON.stringify({ url })
         });
         const data = await res.json();
-
         if (data.error) {
           errorBox.textContent = data.error;
           errorBox.classList.add('visible');
@@ -431,23 +915,30 @@
           currentVideoId = data.video_id;
           currentTranscript = data.transcript;
           transcriptBox.textContent = currentTranscript;
-          thumbnail.src = `https://img.youtube.com/vi/${currentVideoId}/hqdefault.jpg`;
-          thumbnailWrap.classList.add('visible');
+          if (data.platform === 'youtube') {
+            thumbnail.src = `https://img.youtube.com/vi/${currentVideoId}/hqdefault.jpg`;
+            thumbnailWrap.classList.add('visible');
+          } else if (data.thumbnail) {
+            thumbnail.src = data.thumbnail;
+            thumbnailWrap.classList.add('visible');
+          }
           resultWrap.classList.add('visible');
         }
-      } catch (err) {
+      } catch (_) {
         errorBox.textContent = 'Network error — could not reach the server.';
         errorBox.classList.add('visible');
       } finally {
         spinner.classList.remove('visible');
-        submitBtn.disabled = false;
+        btnEl.disabled = false;
+        refreshUsage();
       }
     }
 
-    submitBtn.addEventListener('click', fetchTranscript);
-
-    urlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') fetchTranscript();
+    [['ytInput','ytBtn'],['ttInput','ttBtn'],['igInput','igBtn']].forEach(([inId, btnId]) => {
+      const inp = document.getElementById(inId);
+      const btn = document.getElementById(btnId);
+      btn.addEventListener('click', () => fetchTranscript(inp, btn));
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') fetchTranscript(inp, btn); });
     });
 
     downloadBtn.addEventListener('click', () => {
@@ -459,6 +950,293 @@
       a.click();
       URL.revokeObjectURL(a.href);
     });
+
+    // ── Usage widget ──────────────────────────────────────────
+    async function refreshUsage() {
+      if (!sessionPassword) return;
+      try {
+        const res = await fetch('/usage', { headers: { 'X-App-Password': sessionPassword } });
+        if (!res.ok) return;
+        const u = await res.json();
+        document.getElementById('usageMonth').textContent    = u.month || '—';
+        document.getElementById('usageRequests').textContent = u.requests || 0;
+        document.getElementById('usageMinutes').textContent  = ((u.seconds || 0) / 60).toFixed(1);
+        document.getElementById('usageCost').textContent     = '$' + (u.cost || 0).toFixed(4);
+      } catch (_) {}
+    }
+
+    // ── AI Skills tab ─────────────────────────────────────────
+    const skTabs = document.querySelectorAll('#skills-tabs .tab-btn');
+    skTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        skTabs.forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#section-ai-skills .platform-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('skills-panel-' + tab.dataset.p).classList.add('active');
+        skReset();
+      });
+    });
+
+    let skTranscript = '', skVideoId = '', skThumbnail = '', skPlatform = '', skVideoUrl = '';
+
+    function skReset() {
+      document.getElementById('skErrorBox').classList.remove('visible');
+      document.getElementById('skResultWrap').classList.remove('visible');
+      document.getElementById('skSpinner').classList.remove('visible');
+      document.getElementById('skTranscriptBox').textContent = '';
+      document.getElementById('skThumbWrap').classList.remove('visible');
+      document.getElementById('skThumb').src = '';
+      skTranscript = ''; skVideoId = ''; skThumbnail = ''; skPlatform = ''; skVideoUrl = '';
+    }
+
+    async function fetchSkillsTranscript(inputEl, btnEl) {
+      const url = inputEl.value.trim();
+      if (!url) return;
+      skReset();
+      btnEl.disabled = true;
+      skPlatform = document.querySelector('#skills-tabs .tab-btn.active').dataset.p;
+      skVideoUrl = url;
+      const st = document.getElementById('skSpinnerText');
+      st.textContent = skPlatform === 'youtube' ? 'Fetching transcript…' : 'Fetching captions (may fall back to audio transcription)…';
+      document.getElementById('skSpinner').classList.add('visible');
+      try {
+        const res = await fetch('/transcript', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-App-Password': sessionPassword },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (data.error) {
+          document.getElementById('skErrorBox').textContent = data.error;
+          document.getElementById('skErrorBox').classList.add('visible');
+        } else {
+          skTranscript = data.transcript;
+          skVideoId    = data.video_id;
+          skPlatform   = data.platform;
+          if (data.platform === 'youtube') {
+            skThumbnail = `https://img.youtube.com/vi/${skVideoId}/hqdefault.jpg`;
+            document.getElementById('skThumb').src = skThumbnail;
+            document.getElementById('skThumbWrap').classList.add('visible');
+          } else if (data.thumbnail) {
+            skThumbnail = data.thumbnail;
+            document.getElementById('skThumb').src = skThumbnail;
+            document.getElementById('skThumbWrap').classList.add('visible');
+          }
+          document.getElementById('skTranscriptBox').textContent = skTranscript;
+          document.getElementById('skResultWrap').classList.add('visible');
+        }
+      } catch (_) {
+        document.getElementById('skErrorBox').textContent = 'Network error — could not reach the server.';
+        document.getElementById('skErrorBox').classList.add('visible');
+      } finally {
+        document.getElementById('skSpinner').classList.remove('visible');
+        btnEl.disabled = false;
+      }
+    }
+
+    [['skYtInput','skYtBtn'],['skTtInput','skTtBtn'],['skIgInput','skIgBtn']].forEach(([inId, btnId]) => {
+      const inp = document.getElementById(inId);
+      const btn = document.getElementById(btnId);
+      btn.addEventListener('click', () => fetchSkillsTranscript(inp, btn));
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') fetchSkillsTranscript(inp, btn); });
+    });
+
+    // ── Modal state machine ───────────────────────────────────
+    const skillModal    = document.getElementById('skillModal');
+    const chip0         = document.getElementById('chip0');
+    const chip1         = document.getElementById('chip1');
+    const skillContext  = document.getElementById('skillContext');
+    const genBtn        = document.getElementById('generateSkillBtn');
+    let lastSkillId     = '';
+
+    function setModalState(state) {
+      document.getElementById('modalAnalyzing').classList.toggle('hidden', state !== 'analyzing');
+      document.getElementById('modalReady').classList.toggle('hidden',     state !== 'ready');
+      document.getElementById('modalGenerating').classList.toggle('hidden', state !== 'generating');
+      document.getElementById('modalResult').classList.toggle('hidden',    state !== 'result');
+    }
+
+    function openModal()  { skillModal.classList.add('open'); }
+    function closeModal() { skillModal.classList.remove('open'); }
+
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    skillModal.addEventListener('click', e => { if (e.target === skillModal) closeModal(); });
+
+    [chip0, chip1].forEach(chip => {
+      chip.addEventListener('click', () => {
+        [chip0, chip1].forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        skillContext.value = chip.textContent.trim();
+      });
+    });
+
+    document.getElementById('turnIntoSkillBtn').addEventListener('click', async () => {
+      if (!skTranscript) return;
+      skillContext.value = '';
+      chip0.textContent = ''; chip1.textContent = '';
+      [chip0, chip1].forEach(c => c.classList.remove('selected'));
+      genBtn.disabled = true;
+      setModalState('analyzing');
+      openModal();
+
+      try {
+        const res = await fetch('/analyze-transcript', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-App-Password': sessionPassword },
+          body: JSON.stringify({ transcript: skTranscript, platform: skPlatform })
+        });
+        const data = await res.json();
+        chip0.textContent = (data.suggestions && data.suggestions[0]) || 'Turn this into a reusable technique skill';
+        chip1.textContent = (data.suggestions && data.suggestions[1]) || 'Create a step-by-step process skill';
+      } catch (_) {
+        chip0.textContent = 'Turn this into a reusable technique skill';
+        chip1.textContent = 'Create a step-by-step process skill';
+      }
+
+      genBtn.disabled = false;
+      setModalState('ready');
+    });
+
+    genBtn.addEventListener('click', async () => {
+      const context = skillContext.value.trim();
+      setModalState('generating');
+      genBtn.disabled = true;
+      try {
+        const res = await fetch('/generate-skill', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-App-Password': sessionPassword },
+          body: JSON.stringify({
+            transcript: skTranscript, context,
+            video_id: skVideoId, thumbnail: skThumbnail,
+            video_url: skVideoUrl, platform: skPlatform
+          })
+        });
+        const data = await res.json();
+        if (data.error) {
+          setModalState('ready');
+          genBtn.disabled = false;
+          alert('Error: ' + data.error);
+          return;
+        }
+        lastSkillId = data.id;
+        document.getElementById('resultName').textContent = data.name || 'Skill Ready';
+        document.getElementById('resultDesc').textContent = data.description || '';
+        document.getElementById('resultCategory').textContent = data.category || 'Uncategorized';
+        document.getElementById('skillPreview').textContent = data.skill_markdown;
+
+        document.getElementById('modalDlBtn').onclick = () => {
+          const blob = new Blob([data.skill_markdown], { type: 'text/markdown' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = (data.name || 'skill') + '.md';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        };
+
+        setModalState('result');
+      } catch (_) {
+        setModalState('ready');
+        genBtn.disabled = false;
+        alert('Network error generating skill.');
+      }
+    });
+
+    document.getElementById('viewVaultBtn').addEventListener('click', () => {
+      closeModal();
+      document.getElementById('section-transcripts').classList.remove('active');
+      document.getElementById('section-ai-skills').classList.remove('active');
+      vault.classList.add('visible');
+      loadVault();
+    });
+
+    // ── Skills Vault ──────────────────────────────────────────
+    async function loadVault() {
+      const grid  = document.getElementById('skillsGrid');
+      const empty = document.getElementById('vaultEmpty');
+      const count = document.getElementById('vaultCount');
+      grid.innerHTML = '';
+      try {
+        const res    = await fetch('/skills', { headers: { 'X-App-Password': sessionPassword } });
+        const data   = await res.json();
+        const skills = data.skills || [];
+        count.textContent = skills.length + (skills.length === 1 ? ' skill' : ' skills');
+        if (skills.length === 0) { empty.style.display = 'block'; return; }
+        empty.style.display = 'none';
+        [...skills].reverse().forEach(skill => grid.appendChild(buildSkillCard(skill)));
+
+        // Build category filter pills
+        const cats = [...new Set(skills.map(s => s.category || 'Uncategorized'))].sort();
+        const bar  = document.getElementById('categoryFilterBar');
+        bar.innerHTML = `<button class="cat-pill active" data-cat="all">All (${skills.length})</button>`;
+        cats.forEach(cat => {
+          const c   = skills.filter(s => (s.category || 'Uncategorized') === cat).length;
+          const btn = document.createElement('button');
+          btn.className   = 'cat-pill';
+          btn.dataset.cat = cat;
+          btn.textContent = `${cat} (${c})`;
+          bar.appendChild(btn);
+        });
+        bar.querySelectorAll('.cat-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            bar.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const sel = pill.dataset.cat;
+            document.querySelectorAll('#skillsGrid .skill-card').forEach(card => {
+              card.style.display = (sel === 'all' || card.dataset.category === sel) ? '' : 'none';
+            });
+          });
+        });
+      } catch (_) {
+        empty.textContent = 'Could not load skills.';
+        empty.style.display = 'block';
+      }
+    }
+
+    function buildSkillCard(skill) {
+      const card = document.createElement('div');
+      card.className = 'skill-card';
+      card.dataset.category = skill.category || 'Uncategorized';
+      const thumbSrc = skill.thumbnail ||
+        (skill.platform === 'youtube' ? `https://img.youtube.com/vi/${skill.video_id}/hqdefault.jpg` : '');
+      const desc = skill.description
+        ? (skill.description.length > 120 ? skill.description.slice(0, 117) + '…' : skill.description)
+        : '';
+      card.innerHTML = `
+        <a class="skill-card-thumb-link" href="${skill.video_url || '#'}" target="_blank" rel="noopener">
+          ${thumbSrc
+            ? `<img class="skill-card-thumb" src="${thumbSrc}" alt="${skill.name}" />`
+            : '<div class="skill-card-thumb-placeholder"></div>'}
+        </a>
+        <div class="skill-card-body">
+          <span class="skill-category-badge">${skill.category || 'Uncategorized'}</span>
+          <h3 class="skill-card-name">${skill.name}</h3>
+          <p class="skill-card-desc">${desc}</p>
+        </div>
+        <div class="skill-card-footer">
+          <button class="skill-dl-btn">Download .md</button>
+          <button class="skill-del-btn" aria-label="Delete">✕</button>
+        </div>`;
+
+      card.querySelector('.skill-dl-btn').addEventListener('click', () => {
+        fetch(`/skills/${skill.id}/download`, { headers: { 'X-App-Password': sessionPassword } })
+          .then(r => r.blob())
+          .then(blob => {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = (skill.name || 'skill') + '.md';
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+      });
+
+      card.querySelector('.skill-del-btn').addEventListener('click', async () => {
+        if (!confirm(`Delete "${skill.name}"?`)) return;
+        await fetch(`/skills/${skill.id}`, { method: 'DELETE', headers: { 'X-App-Password': sessionPassword } });
+        loadVault();
+      });
+
+      return card;
+    }
   </script>
 
 </body>
