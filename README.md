@@ -2,7 +2,7 @@
 
 A local web app that extracts transcripts from YouTube, TikTok, and Instagram Reels — and turns them into production-ready Claude AI Skills using OpenRouter.
 
-Runs entirely on your own machine at `http://127.0.0.1:5000`. No hosting required.
+Runs entirely on your own machine. No hosting required.
 
 ---
 
